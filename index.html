@@ -1202,6 +1202,12 @@ b.up { color: var(--open); } b.down { color: #c0392b; }
 @media (max-width: 760px) { .drawer { top: 6px; right: 6px; left: 6px; bottom: 6px; width: auto; } .sum { width: 260px; } .hero { height: 120px; } }
 @media (prefers-reduced-motion: reduce) { .drawer { animation: none; } }
 
+.hero.nophoto { height: auto; background: none; padding: 10px 14px 0; }
+.hero.nophoto figcaption { position: static; }
+.hero.nophoto figcaption .btn { background: var(--surface); color: var(--fg); border-color: var(--line); box-shadow: none; }
+.v3d-head { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); padding: 0 4px; }
+.v3d-head input { width: 130px; accent-color: var(--accent); }
+.v3d-head span { min-width: 58px; color: var(--fg); font-size: 12px; }
 /* Project pins */
 .pp-icon { background: none; border: 0; }
 .ppin { --c: var(--closed); position: absolute; left: 50%; bottom: 0; width: 30px; height: 30px; margin-left: -15px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); transform-origin: 50% 50%; background: var(--c); border: 2px solid var(--surface); box-shadow: 0 2px 6px rgba(0,0,0,.35); display: grid; place-items: center; transition: transform .15s; }
@@ -1465,7 +1471,7 @@ td.num { font-family: var(--f-data); color: var(--muted); width: 36px; }
       <figure class="photocard" id="photoCard" hidden aria-live="polite"></figure>
       <div class="popover" id="popover" hidden></div>
       <div class="tray" id="tray" role="region" aria-label="Projects selected for comparison" hidden></div>
-      <div class="v3d" id="v3d" role="dialog" aria-label="3D view" hidden><div class="v3d-bar"><b id="v3dTitle">3D view</b><span class="v3d-modes" id="v3dModes" role="group" aria-label="Camera"><button class="btn" data-cam="orbit" title="Circle the site">Orbit</button><button class="btn" data-cam="fly" title="Low drone passes over the site">Drone flight</button><button class="btn" data-cam="top" title="Look straight down">Top-down</button></span><button class="btn" id="v3dSat" aria-pressed="true">Imagery</button><button class="btn" id="v3dBld" aria-pressed="true">Buildings</button><button class="btn" id="v3dG" hidden aria-pressed="false" title="Google Photorealistic 3D (needs a Google Maps API key)">Google 3D</button><button class="btn primary" id="v3dClose">Close 3D</button></div><div id="v3dMap"></div><div class="g3d" id="g3d" hidden></div><div class="v3d-status" id="v3dStatus" hidden></div><p class="v3d-note" id="v3dNote"></p></div>
+      <div class="v3d" id="v3d" role="dialog" aria-label="3D view" hidden><div class="v3d-bar"><b id="v3dTitle">3D view</b><span class="v3d-modes" id="v3dModes" role="group" aria-label="Camera"><button class="btn" data-cam="orbit" title="Turn a full 360° around the site">360° orbit</button><button class="btn" data-cam="fly" title="Low drone passes over the site">Drone flight</button><button class="btn" data-cam="top" title="Look straight down">Top-down</button></span><label class="v3d-head" title="Turn the view">Turn <input type="range" id="v3dHead" min="0" max="359" step="1" value="0" aria-label="Turn the view, in degrees"><span id="v3dHeadV" class="mono">N 0°</span></label><button class="btn" id="v3dSat" aria-pressed="false" title="Satellite layer (low resolution up close)">Satellite</button><button class="btn" id="v3dBld" aria-pressed="true">Buildings</button><button class="btn" id="v3dG" hidden aria-pressed="false" title="Google Photorealistic 3D (needs a Google Maps API key)">Google 3D</button><button class="btn primary" id="v3dClose">Close</button></div><div id="v3dMap"></div><div class="g3d" id="g3d" hidden></div><div class="v3d-status" id="v3dStatus" hidden></div><p class="v3d-note" id="v3dNote"></p></div>
       <div class="loader" id="loader"><span><i aria-hidden="true"></i>Loading map…</span></div>
       <div class="hint" id="hint" hidden></div>
       <div class="mapnav" id="mapnav"></div>
@@ -1918,7 +1924,7 @@ function renderTable() {
     if (!vals.length) return null;
     return m[3] === 'min' ? Math.min(...vals) : Math.max(...vals);
   });
-  const head = rows.map(p => `<th class="cmp-col"><div class="cmp-head"><div class="cmp-img"><img src="${esc(satThumb(p.lat, p.lng, .35, 360, 200))}" alt="Satellite view of ${esc(p.short)}" loading="lazy" onerror="this.parentNode.classList.add('noimg')"><span class="hero-pin" aria-hidden="true"></span></div>
+  const head = rows.map(p => `<th class="cmp-col"><div class="cmp-head">${(AREA[p.id] || [])[0] ? `<div class="cmp-img"><img src="${esc(AREA[p.id][0].f)}" alt="Photo near ${esc(p.short)}" loading="lazy" onerror="this.parentNode.remove()"></div>` : ''}
     <b>${esc(p.name)}</b><small>${esc(p.city)}, ${esc(p.region)} · ${esc(p.type)}</small>${pill(p)}
     <div class="cmp-acts"><button class="btn primary" data-go="${p.id}">Open map</button><button class="btn" data-go3d="${p.id}" title="3D view">3D</button></div>
     <label class="cmpchk"><input type="checkbox" data-cmp="${p.id}" ${state.cmp.has(p.id) ? 'checked' : ''}> Compare</label></div></th>`).join('');
@@ -2070,7 +2076,7 @@ let pop = null; // which tool popover is open
 function renderTools() {
   const proj = state.mode === 'project';
   const b = (k, label, pressed, dis) => `<button data-tool="${k}" title="${label}" aria-label="${label}"${pressed != null ? ` aria-pressed="${pressed}"` : ''}${dis ? ' disabled' : ''}>${TICON[k]}</button>`;
-  $('tools').innerHTML = b('all', 'Show all projects') + b('layers', 'Layers and map style', pop === 'layers') + b('v3d', proj ? '3D view and drone flight' : '3D view (open a project first)', null, !proj) + b('measure', proj ? 'Measure distance' : 'Measure distance (open a project first)', state.measure, !proj) + b('full', 'Full screen', !!document.fullscreenElement);
+  $('tools').innerHTML = b('all', 'Show all projects') + b('layers', 'Layers and map style', pop === 'layers') + b('v3d', proj ? '360° view and drone flight' : '360° view (open a project first)', null, !proj) + b('measure', proj ? 'Measure distance' : 'Measure distance (open a project first)', state.measure, !proj) + b('full', 'Full screen', !!document.fullscreenElement);
 }
 $('tools').onclick = e => {
   const t = e.target.closest('[data-tool]')?.dataset.tool; if (!t) return;
@@ -2354,7 +2360,7 @@ function hoodPane(p) {
   const gal = (AREA[p.id] || []);
   return `<p class="lead">${esc(p.summary)}</p>
     <dl class="kv">${p.stats.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
-    <div class="pc-acts"><button class="btn primary" data-act="3d">▶ 3D view</button><button class="btn" data-act="drone">✈ Drone flight</button></div>
+    <div class="pc-acts"><button class="btn primary" data-act="3d">⟳ 360° view</button><button class="btn" data-act="drone">✈ Drone flight</button></div>
     ${pz ? `<h3>Home values · Zillow</h3><div class="zcard"><div><span>ZIP ${pz.zip} (${esc(pz.city)}) typical value</span><b>${money(pz.v)}</b><small class="${pz.yoy >= 0 ? 'up' : 'down'}">${pz.yoy >= 0 ? '▲ +' : '▼ '}${pz.yoy}% vs a year ago</small></div>${spark(pz.s)}</div>`
       : `<div class="note-box">Zillow publishes home values for US ZIP codes only, so there’s no home value data for ${esc(p.city)}.</div>`}
     ${H?.zips.length > 1 ? `<h3>ZIPs around this project</h3><ul class="zbars">${H.zips.map(z => `<li><span>ZIP ${z.zip}<small>${esc(z.city)}${z.zip === H.zip ? ' · project' : ''}</small></span><span class="zbar"><i style="width:${(z.v / maxV * 100).toFixed(1)}%" class="${z.zip === H.zip ? 'own' : ''}"></i></span><b class="mono">${money(z.v)}</b></li>`).join('')}</ul>` : ''}
@@ -2421,7 +2427,7 @@ function placePane(p) {
 }
 
 /* ---------- 3D view: satellite imagery on real terrain + OpenStreetMap buildings (MapLibre GL); Google Photorealistic 3D (CesiumJS) with a key ---------- */
-let m3 = null, camMode = 'orbit', camRaf = 0, camT0 = 0, m3markers = [], m3opts = { bld: true, sat: true }, g3 = null;
+let m3 = null, camMode = 'orbit', camRaf = 0, camT0 = 0, m3markers = [], m3opts = { bld: true, sat: false }, g3 = null;
 const B3 = {};
 const earthUrl = (lat, lng, range = 1600) => `https://earth.google.com/web/@${lat},${lng},250a,${range}d,35y,0h,62t,0r`;
 function loadB3(pid) {
@@ -2441,12 +2447,12 @@ function open3D(mode = 'orbit') {
   if (state.mode !== 'project') return;
   const p = byId[state.pid];
   $('v3d').hidden = false; camMode = reduceMotion ? 'still' : mode;
-  $('v3dTitle').textContent = `${p.short} · 3D`;
+  $('v3dTitle').textContent = `${p.short} · 360° view`;
   $('v3dG').hidden = !GKEY;
   renderV3Btns();
   closeG3();
   if (!window.maplibregl) { v3status('The 3D view needs a mapping library (MapLibre) that couldn’t load. Check your connection and try again.', true); return; }
-  v3status('Loading 3D terrain, imagery and buildings…');
+  v3status('Loading the 360° view…');
   loadB3(p.id).then(d => { if (state.pid === p.id && !$('v3d').hidden) build3D(p, d); })
     .catch(e => v3status(`The 3D building data couldn’t load (${esc(e.message)}). Please try again.`, true));
 }
@@ -2471,7 +2477,7 @@ function startCam(mode) {
   if (mode === 'still') return;
   if (mode === 'orbit') {
     m3.easeTo({ center: [p.lng, p.lat], zoom: 16.2, pitch: 64, duration: reduceMotion ? 0 : 1500 });
-    m3.once('moveend', () => { const tick = () => { if (!m3 || camMode !== 'orbit') return; m3.setBearing(m3.getBearing() + 0.08); camRaf = requestAnimationFrame(tick); }; camRaf = requestAnimationFrame(tick); });
+    m3.once('moveend', () => { const tick = () => { if (!m3 || camMode !== 'orbit') return; m3.setBearing(m3.getBearing() + 0.15); camRaf = requestAnimationFrame(tick); }; camRaf = requestAnimationFrame(tick); });
   }
   if (mode === 'fly') {
     // Drone pass: low and steep, travelling 2.4 km straight across the site, then turning 90° for the next pass
@@ -2537,6 +2543,7 @@ function build3D(p, d) {
   m3.on('error', e => { if (!m3ready) v3status(`The 3D view hit a problem: ${esc((e && e.error && e.error.message) || 'unknown error')}.`, true); });
   m3.on('load', () => {
     m3ready = true; v3status('');
+    m3.on('rotate', syncHead); syncHead(); addSky();
     applyM3Opts();
     const lbl = (lng, lat, html, cls) => { const el = document.createElement('div'); el.className = cls; el.innerHTML = html; m3markers.push(new maplibregl.Marker({ element: el, anchor: 'bottom' }).setLngLat([lng, lat]).addTo(m3)); return el; };
     lbl(p.lng, p.lat, `<b>${esc(p.short)}</b>`, 'm3-proj');
@@ -2548,7 +2555,7 @@ function build3D(p, d) {
       el.addEventListener('click', () => { close3D(); if (state.tab !== 'hood') { state.tab = 'hood'; renderPanel(); renderHood(false); } openPlace({ src: 'hood', cat: c, i }); });
     });
     const tagged = d.b.filter(x => !x[1]).length;
-    $('v3dNote').textContent = `${st ? (inUS(p.lat, p.lng) ? 'USGS' : 'Sentinel-2') + ' satellite imagery on Mapzen terrain (heights exaggerated 1.35×). ' : ''}${d.b.length.toLocaleString()} buildings from OpenStreetMap; ${tagged.toLocaleString()} have a mapped height, the rest use a typical height for their type. A 3D model, not a photograph.`;
+    $('v3dNote').textContent = `${st ? 'Real terrain from Mapzen (heights exaggerated 1.35×). Satellite layer optional (low resolution up close). ' : ''}${d.b.length.toLocaleString()} buildings from OpenStreetMap; ${tagged.toLocaleString()} have a mapped height, the rest use a typical height for their type. A 3D model, not a photograph.`;
     m3.flyTo({ center: [p.lng, p.lat], zoom: 16.1, pitch: 62, bearing: -30, duration: reduceMotion ? 0 : 4200, essential: true });
     m3.once('moveend', () => startCam(camMode));
   });
@@ -2736,8 +2743,10 @@ function openGalleryDrawer(i) {
 
 /* Satellite snapshot of the project at the top of its panel */
 function projHero(p) {
-  return `<figure class="hero"><img src="${esc(satThumb(p.lat, p.lng))}" alt="Satellite view of the ${esc(p.short)} site" onerror="this.closest('figure').classList.add('noimg')"><span class="hero-pin" aria-hidden="true"></span>
-    <figcaption><button class="btn" data-act="3d">▶ 3D view</button><button class="btn" data-act="drone">✈ Drone flight</button></figcaption><small>${inUS(p.lat, p.lng) ? 'USGS imagery' : 'Sentinel-2 imagery (EOX)'}</small></figure>`;
+  const g = (AREA[p.id] || [])[0];
+  const btns = `<figcaption><button class="btn" data-act="3d">⟳ 360° view</button><button class="btn" data-act="drone">✈ Drone flight</button></figcaption>`;
+  if (!g) return `<figure class="hero nophoto">${btns}</figure>`;
+  return `<figure class="hero"><img src="${esc(g.f)}" alt="${esc(g.t)}" onerror="this.closest('figure').classList.add('nophoto')">${btns}<small>Photo ${fmtD(p, g.km)} from the site · ${esc(g.cr)} · ${esc(g.lic)}</small></figure>`;
 }
 
 /* ---------- Selected place photo (bottom-left of the map) + photo tour ---------- */
@@ -2755,7 +2764,7 @@ function placePhoto(p, pl) {
   const o = placeObj(p, pl); if (!o) return;
   const d = DETAILS[o.oid] || {};
   if (d.img) showPhotoCard({ src: d.img, title: o.name, sub: d.cap || o.kind, credit: `Photo: ${d.cr || ''} · ${d.lic || ''}` });
-  else showPhotoCard({ src: satThumb(o.p[0], o.p[1], .14, 600, 380), title: o.name, sub: `${o.kind} · seen from above`, credit: inUS(o.p[0], o.p[1]) ? 'Imagery: USGS (public domain)' : 'Imagery: Sentinel-2 cloudless by EOX (CC BY 4.0)', sat: true });
+  else hidePhotoCard();  // no real photo of this place: show nothing rather than a blurry satellite crop
 }
 const tour = { on: false, i: 0, t: 0 };
 function startTour() { const p = byId[state.pid]; if (!(AREA[p.id] || []).length) return; tour.on = true; tour.i = 0; renderPanel(); stepTour(); }
@@ -2772,6 +2781,21 @@ map.on('popupopen', e => {
   const el = e.popup.getElement(); if (!el) return;
   el.querySelectorAll('[data-zoom]').forEach(b => b.onclick = () => { const [a, c] = b.dataset.zoom.split(','); map.flyTo([+a, +c], 17, { duration: reduceMotion ? 0 : .8 }); });
 });
+
+/* ---------- 360° view: turn slider + compass readout ---------- */
+const DIR8 = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+function syncHead() {
+  if (!m3) return;
+  const b = ((m3.getBearing() % 360) + 360) % 360;
+  const s = $('v3dHead'); if (s && document.activeElement !== s) s.value = Math.round(b) % 360;
+  const v = $('v3dHeadV'); if (v) v.textContent = `${DIR8[Math.round(b / 45) % 8]} ${Math.round(b) % 360}°`;
+}
+$('v3dHead').addEventListener('input', e => { if (!m3) return; stopCam(); camMode = 'still'; renderV3Btns(); m3.setBearing(+e.target.value); syncHead(); });
+function addSky() {
+  if (!m3 || !m3.setSky) return;
+  const dark = matchMedia('(prefers-color-scheme: dark)').matches && document.documentElement.dataset.theme !== 'light' || document.documentElement.dataset.theme === 'dark';
+  try { m3.setSky(dark ? { 'sky-color': '#0f1d2b', 'horizon-color': '#2a3b4d', 'fog-color': '#151d26', 'sky-horizon-blend': .5, 'horizon-fog-blend': .6, 'fog-ground-blend': .5 } : { 'sky-color': '#9fc6e8', 'horizon-color': '#e8f0f6', 'fog-color': '#eef2f5', 'sky-horizon-blend': .5, 'horizon-fog-blend': .6, 'fog-ground-blend': .45 }); } catch (e) {}
+}
 
 /* Locator inset: where in the US / world this project is */
 let inset, insetDot, insetBox;
@@ -2854,7 +2878,7 @@ const step = d => { const i = state.mode === 'overview' ? 0 : PROJECTS.indexOf(b
 function renderNav() {
   const p = state.pid ? byId[state.pid] : null;
   $('mapnav').innerHTML = `<button id="prevMap" aria-label="Previous map" title="Previous map (←)">‹</button><span><b>${p ? p.n : 1}/${PROJECTS.length + 1}</b>${p ? esc(p.short) : 'All projects'}</span><button id="nextMap" aria-label="Next map" title="Next map (→)">›</button>`;
-  if (p) $('mapnav').insertAdjacentHTML('beforeend', `<span class="nav-sep"></span><button class="qbtn" data-q="3d" title="3D view of the site">3D</button><button class="qbtn" data-q="drone" title="Drone flight over the site">Drone</button><button class="qbtn" data-q="sat" aria-pressed="${$('mapwrap').dataset.style === 'satellite'}" title="Satellite imagery on or off">Satellite</button>`);
+  if (p) $('mapnav').insertAdjacentHTML('beforeend', `<span class="nav-sep"></span><button class="qbtn" data-q="3d" title="360° view of the site">360°</button><button class="qbtn" data-q="drone" title="Drone flight over the site">Drone</button><button class="qbtn" data-q="sat" aria-pressed="${$('mapwrap').dataset.style === 'satellite'}" title="Satellite imagery on or off">Satellite</button>`);
   $('prevMap').onclick = () => step(-1); $('nextMap').onclick = () => step(1);
   $('mapnav').querySelectorAll('[data-q]').forEach(b => b.onclick = () => {
     if (b.dataset.q === '3d') open3D();
