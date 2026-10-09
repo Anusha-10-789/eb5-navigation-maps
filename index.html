@@ -1351,6 +1351,59 @@ td.num { font-family: var(--f-data); color: var(--muted); width: 36px; }
   .route-line { animation: none; }
   .ppin, .lm, .cl { transition: none; }
 }
+
+/* ---------- Simpler, conventional layout: one left panel (project list or project details) + a large map ---------- */
+@media (min-width: 761px) {
+  .body, .body[data-panel="off"], .body[data-panel="on"] { grid-template-columns: 372px minmax(0,1fr); grid-template-areas: "left map"; }
+  .side, .panel { grid-area: left; position: static !important; width: auto !important; box-shadow: none !important; }
+  .mapcol { grid-area: map; }
+  .body[data-panel="on"] .side { display: none !important; }
+  .body[data-panel="off"] .panel { display: none !important; }
+  .body[data-panel="on"] .panel { display: flex !important; }
+  #sideToggle { display: none !important; }
+}
+.backbar { border: 0; background: var(--surface); text-align: left; padding: 11px 14px; font-weight: 600; font-size: 13px; color: var(--accent); cursor: pointer; border-bottom: 1px solid var(--line); flex: none; }
+.backbar:hover { background: var(--surface-2); }
+.fbox > summary { cursor: pointer; list-style: none; user-select: none; }
+.fbox > summary::-webkit-details-marker { display: none; }
+.fbox > summary > span::after { content: '  ▸'; color: var(--muted); }
+.fbox[open] > summary > span::after { content: '  ▾'; }
+.fbox:not([open]) { gap: 0; }
+.hero { height: 132px; }
+.mapwrap.hood .caption { flex-wrap: nowrap; overflow-x: auto; max-height: none; max-width: calc(100% - 110px); scrollbar-width: thin; }
+.mapwrap.hood .caption .hchip { flex: none; }
+.modes { grid-template-columns: repeat(3, 1fr); }
+.ph { padding-top: 10px; }
+.acts .btn { height: 28px; }
+.legend.collapsed { opacity: .92; }
+
+/* ---------- Selected place photo, bottom-left ---------- */
+.photocard { position: absolute; z-index: 820; left: 10px; bottom: 26px; width: 300px; margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,.32); }
+.photocard .pcimg { position: relative; height: 190px; overflow: hidden; background: #0b1016; }
+.photocard .pcimg img { width: 100%; height: 100%; object-fit: cover; display: block; transform-origin: 60% 40%; }
+.photocard .pc-tag { position: absolute; left: 8px; top: 8px; font: 600 10px var(--f-data); letter-spacing: .08em; color: #fff; background: rgba(0,0,0,.55); padding: 2px 6px; border-radius: 4px; }
+.photocard figcaption { padding: 8px 34px 10px 11px; display: grid; gap: 2px; }
+.photocard figcaption b { font-size: 13.5px; line-height: 1.25; }
+.photocard figcaption small { color: var(--muted); font-size: 12px; }
+.photocard .pc-cr { font-size: 10.5px; color: var(--muted); }
+.photocard .close { position: absolute; top: 6px; right: 6px; width: 26px; height: 26px; border-radius: 50%; background: rgba(0,0,0,.55); color: #fff; }
+.photocard .close:hover { background: rgba(0,0,0,.75); color: #fff; }
+.photocard .tourbtn { margin: 0 11px 10px; height: 28px; font-size: 12px; }
+.mapwrap.has-photo .inset { display: none; }
+
+/* ---------- Animation on real images: slow pan-and-zoom ---------- */
+@keyframes kb { from { transform: scale(1.03) translate(0, 0); } to { transform: scale(1.2) translate(-3%, -2.5%); } }
+@keyframes pcIn { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: none; } }
+.photocard.anim { animation: pcIn .35s ease-out; }
+.photocard.anim .pcimg img { animation: kb 14s ease-in-out infinite alternate; }
+.hero img, .cmp-img img { animation: kb 20s ease-in-out infinite alternate; }
+.sum-pop { animation: pcIn .25s ease-out; }
+@media (prefers-reduced-motion: reduce) { .photocard.anim, .photocard.anim .pcimg img, .hero img, .cmp-img img, .sum-pop { animation: none; } }
+@media (max-width: 760px) {
+  .photocard { width: 170px; bottom: auto; top: 52px; left: 10px; }
+  .photocard .pcimg { height: 100px; }
+  .photocard figcaption small, .photocard .pc-cr { display: none; }
+}
 </style>
 
 <div class="app" id="app">
@@ -1380,8 +1433,7 @@ td.num { font-family: var(--f-data); color: var(--muted); width: 36px; }
 
   <main class="body" id="body" data-panel="off">
     <aside class="card side" id="side" aria-label="Projects and filters">
-      <div class="side-h" id="filtersBox" role="group" aria-label="Filters">
-        <div class="fhead"><span>Filters</span><button class="link" id="resetF" hidden>Reset all</button></div>
+      <details class="side-h fbox" id="filtersBox"><summary class="fhead"><span>Filters</span><button class="link" id="resetF" hidden>Reset all</button></summary>
         <div class="frow"><label for="fRegion">Region</label><select id="fRegion"></select></div>
         <div class="frow"><label for="fCity">City</label><select id="fCity"></select></div>
         <div class="frow"><span>Status</span><div class="chips" data-box="status"></div></div>
@@ -1389,7 +1441,7 @@ td.num { font-family: var(--f-data); color: var(--muted); width: 36px; }
         <div class="frow"><span>Visa priority</span><div class="chips" data-box="prio"></div></div>
         <div class="frow"><span>Market</span><div class="chips" data-box="market"></div></div>
         <div class="frow"><span>Saved</span><div class="chips" data-box="star"></div></div>
-      </div>
+      </details>
       <ul class="plist" id="plist" aria-label="Maps"></ul>
       <details class="side-f" id="layersBox">
         <summary>Map layers</summary>
@@ -1410,9 +1462,10 @@ td.num { font-family: var(--f-data); color: var(--muted); width: 36px; }
       <div class="tools" id="tools" role="toolbar" aria-label="Map tools"></div>
       <div class="legend" id="legend"></div>
       <aside class="drawer" id="drawer" hidden aria-label="Full details"></aside>
+      <figure class="photocard" id="photoCard" hidden aria-live="polite"></figure>
       <div class="popover" id="popover" hidden></div>
       <div class="tray" id="tray" role="region" aria-label="Projects selected for comparison" hidden></div>
-      <div class="v3d" id="v3d" role="dialog" aria-label="3D view" hidden><div class="v3d-bar"><b id="v3dTitle">3D view</b><span class="v3d-modes" id="v3dModes" role="group" aria-label="Camera"><button class="btn" data-cam="orbit" title="Circle the site">Orbit</button><button class="btn" data-cam="fly" title="Low drone passes over the site">Drone flight</button><button class="btn" data-cam="top" title="Look straight down">Top-down</button></span><button class="btn" id="v3dSat" aria-pressed="true">Imagery</button><button class="btn" id="v3dBld" aria-pressed="true">Buildings</button><button class="btn" id="v3dG" aria-pressed="false" title="Google Photorealistic 3D (needs a Google Maps API key)">Google 3D</button><a class="btn" id="v3dEarth" target="_blank" rel="noopener">Real 3D in Google Earth ↗</a><button class="btn primary" id="v3dClose">Close 3D</button></div><div id="v3dMap"></div><div class="g3d" id="g3d" hidden></div><div class="v3d-status" id="v3dStatus" hidden></div><p class="v3d-note" id="v3dNote"></p></div>
+      <div class="v3d" id="v3d" role="dialog" aria-label="3D view" hidden><div class="v3d-bar"><b id="v3dTitle">3D view</b><span class="v3d-modes" id="v3dModes" role="group" aria-label="Camera"><button class="btn" data-cam="orbit" title="Circle the site">Orbit</button><button class="btn" data-cam="fly" title="Low drone passes over the site">Drone flight</button><button class="btn" data-cam="top" title="Look straight down">Top-down</button></span><button class="btn" id="v3dSat" aria-pressed="true">Imagery</button><button class="btn" id="v3dBld" aria-pressed="true">Buildings</button><button class="btn" id="v3dG" hidden aria-pressed="false" title="Google Photorealistic 3D (needs a Google Maps API key)">Google 3D</button><button class="btn primary" id="v3dClose">Close 3D</button></div><div id="v3dMap"></div><div class="g3d" id="g3d" hidden></div><div class="v3d-status" id="v3dStatus" hidden></div><p class="v3d-note" id="v3dNote"></p></div>
       <div class="loader" id="loader"><span><i aria-hidden="true"></i>Loading map…</span></div>
       <div class="hint" id="hint" hidden></div>
       <div class="mapnav" id="mapnav"></div>
@@ -1728,7 +1781,7 @@ const ICON = {
   copy: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="5" y="5" width="8.5" height="8.5" rx="1.5"/><path d="M3 10.5H2.5V2.5h8V3"/></svg>',
   dir: '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 .9l7.1 7.1L8 15.1.9 8zM6 9.5h1.5V7.6h2v1.6L12 7l-2.5-2.2v1.6h-2A1.5 1.5 0 0 0 6 7.9z" fill-rule="evenodd"/></svg>',
 };
-const drawerMode = matchMedia('(max-width: 1100px)');
+const drawerMode = matchMedia('(max-width: 760px)');
 
 /* ---------- Sidebar: filters + project list ---------- */
 function renderSide() {
@@ -1752,6 +1805,7 @@ function renderSide() {
 /* ---------- Summary strip above the map ---------- */
 function renderSummary() {
   const s = $('summary');
+  s.hidden = state.mode === 'project' && state.view === 'map';
   if (state.mode === 'overview' || state.view === 'table') {
     const base = PROJECTS.filter(p => matches(p, 'status'));
     const only = state.F.status.size === 1 ? [...state.F.status][0] : null;
@@ -1791,7 +1845,7 @@ function onFilter() {
 $('fRegion').onchange = e => { state.F.region = e.target.value; if (state.F.city && !PROJECTS.some(p => p.city === state.F.city && (!state.F.region || p.region === state.F.region))) state.F.city = ''; onFilter(); };
 $('fCity').onchange = e => { state.F.city = e.target.value; if (state.F.city) state.F.region = PROJECTS.find(p => p.city === state.F.city).region; onFilter(); };
 $('filtersBox').onclick = e => {
-  if (e.target.closest('#resetF')) { resetFilters(); onFilter(); return; }
+  if (e.target.closest('#resetF')) { e.preventDefault(); resetFilters(); onFilter(); return; }
   const b = e.target.closest('button.chip'); if (!b) return;
   const k = b.dataset.k;
   if (k === 'star') { if (!SL.size && !state.F.star) { toast('Star a project to add it to your shortlist'); return; } state.F.star = !state.F.star; }
@@ -1866,7 +1920,7 @@ function renderTable() {
   });
   const head = rows.map(p => `<th class="cmp-col"><div class="cmp-head"><div class="cmp-img"><img src="${esc(satThumb(p.lat, p.lng, .35, 360, 200))}" alt="Satellite view of ${esc(p.short)}" loading="lazy" onerror="this.parentNode.classList.add('noimg')"><span class="hero-pin" aria-hidden="true"></span></div>
     <b>${esc(p.name)}</b><small>${esc(p.city)}, ${esc(p.region)} · ${esc(p.type)}</small>${pill(p)}
-    <div class="cmp-acts"><button class="btn primary" data-go="${p.id}">Open map</button><button class="btn" data-go3d="${p.id}" title="3D view">3D</button><a class="btn" href="${earthUrl(p.lat, p.lng)}" target="_blank" rel="noopener" title="Google Earth">Earth ↗</a></div>
+    <div class="cmp-acts"><button class="btn primary" data-go="${p.id}">Open map</button><button class="btn" data-go3d="${p.id}" title="3D view">3D</button></div>
     <label class="cmpchk"><input type="checkbox" data-cmp="${p.id}" ${state.cmp.has(p.id) ? 'checked' : ''}> Compare</label></div></th>`).join('');
   const body = M.map((m, mi) => {
     if (!m[1]) return `<tr class="cmp-sec"><th scope="row" colspan="${rows.length + 1}">${m[0]}</th></tr>`;
@@ -2014,14 +2068,9 @@ const TICON = {
 };
 let pop = null; // which tool popover is open
 function renderTools() {
-  const proj = state.mode === 'project', hasSel = proj || !!state.sel;
+  const proj = state.mode === 'project';
   const b = (k, label, pressed, dis) => `<button data-tool="${k}" title="${label}" aria-label="${label}"${pressed != null ? ` aria-pressed="${pressed}"` : ''}${dis ? ' disabled' : ''}>${TICON[k]}</button>`;
-  $('tools').innerHTML = b('all', 'Fit all projects') + b('center', hasSel ? 'Center on selected project' : 'Center on selected project (select a project first)', null, !hasSel) +
-    b('layers', 'Nearby place layers', pop === 'layers') + b('style', 'Map style', pop === 'style') +
-    b('v3d', proj ? '3D fly-around (drone-style view)' : '3D view (open a project map first)', null, !proj) +
-    b('radius', proj ? `Radius search (${state.radius} mi)` : 'Radius search (open a project map first)', state.rings, !proj) +
-    b('measure', proj ? 'Measure distance' : 'Measure distance (open a project map first)', state.measure, !proj) +
-    b('legend', state.legendOpen ? 'Hide legend' : 'Show legend', state.legendOpen) + b('full', 'Full screen', !!document.fullscreenElement);
+  $('tools').innerHTML = b('all', 'Show all projects') + b('layers', 'Layers and map style', pop === 'layers') + b('v3d', proj ? '3D view and drone flight' : '3D view (open a project first)', null, !proj) + b('measure', proj ? 'Measure distance' : 'Measure distance (open a project first)', state.measure, !proj) + b('full', 'Full screen', !!document.fullscreenElement);
 }
 $('tools').onclick = e => {
   const t = e.target.closest('[data-tool]')?.dataset.tool; if (!t) return;
@@ -2050,7 +2099,8 @@ function renderPopover() {
     const p = state.mode === 'project' ? byId[state.pid] : null;
     el.innerHTML = `<div class="pv-h"><b>Nearby places</b><button class="close" data-pv-close aria-label="Close">×</button></div>
       ${p ? `<p class="muted">Within ${radLabel(p)} of ${esc(p.short)}. Source: OpenStreetMap.</p>` : `<p class="muted">Open a project map to see places around it. Highways show on every map.</p>`}
-      <div class="pv-list">${NCATS.map(c => { const n = p ? withinR(p, c.k).length : null; return `<label class="toggle"><input type="checkbox" data-layer="${c.k}" ${state.layersOn.has(c.k) ? 'checked' : ''}${!p && c.k !== 'highway' ? ' disabled' : ''}><span class="poi c-${c.k}">${svg(c.icon)}</span>${c.label}${n != null ? ` <span class="ct">${n}</span>` : ''}</label>`; }).join('')}</div>`;
+      <div class="pv-list">${NCATS.map(c => { const n = p ? withinR(p, c.k).length : null; return `<label class="toggle"><input type="checkbox" data-layer="${c.k}" ${state.layersOn.has(c.k) ? 'checked' : ''}${!p && c.k !== 'highway' ? ' disabled' : ''}><span class="poi c-${c.k}">${svg(c.icon)}</span>${c.label}${n != null ? ` <span class="ct">${n}</span>` : ''}</label>`; }).join('')}</div>
+      <div class="pv-h" style="margin-top:6px"><b>Map style</b></div><div class="pv-list" role="radiogroup" aria-label="Map style">${STYLES.map(([k, t]) => `<label class="toggle"><input type="radio" name="mstyle" value="${k}" ${$('mapwrap').dataset.style === k ? 'checked' : ''}>${t}</label>`).join('')}</div>`;
   } else {
     const p = state.mode === 'project' ? byId[state.pid] : state.sel;
     const c = p ? `${p.lat},${p.lng}` : `${map.getCenter().lat.toFixed(5)},${map.getCenter().lng.toFixed(5)}`;
@@ -2058,8 +2108,8 @@ function renderPopover() {
     el.innerHTML = `<div class="pv-h"><b>Map style</b><button class="close" data-pv-close aria-label="Close">×</button></div>
       <div class="pv-list" role="radiogroup" aria-label="Map style">${STYLES.map(([k, t]) => `<label class="toggle"><input type="radio" name="mstyle" value="${k}" ${state.style === k ? 'checked' : ''}>${t}</label>`).join('')}
 </div>
-      <p class="muted">Satellite: ${GKEY ? 'Google imagery' : 'USGS imagery (US, public domain) and Sentinel-2 (India)'}. For terrain and 3D buildings, open the 3D view. Or open this spot in Google Maps:</p>
-      <div class="pv-btns"><a class="btn" target="_blank" rel="noopener" href="https://www.google.com/maps/@?api=1&map_action=map&center=${c}&zoom=${z}&basemap=satellite">Satellite ↗</a><a class="btn" target="_blank" rel="noopener" href="https://www.google.com/maps/@?api=1&map_action=map&center=${c}&zoom=${z}&basemap=terrain">Terrain ↗</a></div>`;
+      <p class="muted">Satellite: ${GKEY ? 'Google imagery' : 'USGS imagery (US, public domain) and Sentinel-2 (India)'}. For terrain and 3D buildings, open the 3D view.</p>
+      <div class="pv-btns"></div>`;
   }
   renderTools();
 }
@@ -2104,7 +2154,7 @@ function showMeasure(ll, name, rkm, rmin) {
   measureLayer.addLayer(L.marker(ll, { pane: 'labels', interactive: false, keyboard: false, icon: L.divIcon({ className: 'rl', iconSize: [0, 0], html: `<span class="mlbl">${fmtD(p, km)} straight line${rkm != null ? `<br>${fmtD(p, rkm)} by road · ${rmin} min` : ''}</span>` }) }));
   measureLayer.addTo(map);
   const lat = (Array.isArray(ll) ? ll[0] : ll.lat).toFixed(5), lng = (Array.isArray(ll) ? ll[1] : ll.lng).toFixed(5);
-  $('hint').innerHTML = `<span>${name ? `<b>${esc(name)}</b>: ` : ''}<b>${fmtD(p, km)}</b> straight line · ${rkm != null ? `<b>${fmtD(p, rkm)}</b> by road, ${rmin} min` : `road distance isn’t available for a map point offline — <a href="${gmaps([lat, lng], [p.lat, p.lng])}" target="_blank" rel="noopener">get it in Google Maps ↗</a>`}<button id="mDone">Done</button></span>`;
+  $('hint').innerHTML = `<span>${name ? `<b>${esc(name)}</b>: ` : ''}<b>${fmtD(p, km)}</b> straight line · ${rkm != null ? `<b>${fmtD(p, rkm)}</b> by road, ${rmin} min` : `click a place icon to also see its road distance`}<button id="mDone">Done</button></span>`;
   $('mDone').onclick = () => setMeasure(false);
 }
 map.on('click', e => {
@@ -2115,7 +2165,7 @@ map.on('click', e => {
 });
 
 /* ---------- Directions ---------- */
-const MODES = [['drive', 'Drive', 'driving'], ['bike', 'Bike', 'bicycling'], ['walk', 'Walk', 'walking'], ['transit', 'Transit', 'transit']];
+const MODES = [['drive', 'Drive', 'driving'], ['bike', 'Bike', 'bicycling'], ['walk', 'Walk', 'walking']];
 const dirLayer = L.layerGroup();
 function dirOrigins(p) { return DIRS[p.id] || []; }
 function dirPane(p) {
@@ -2129,18 +2179,18 @@ function dirPane(p) {
     : o ? gmaps([p.lat, p.lng], o.p) + `&travelmode=${MODES.find(m => m[0] === d.mode)[2]}` : null;
   let result = '';
   if (d.from == null) result = `<p class="muted">Choose a starting point to see the route, distance and travel time.</p>`;
-  else if (d.from === -1) result = d.custom.trim() ? `<div class="dres"><p class="muted" style="margin:0">Routes from a typed address need a live routing service, which this page can’t reach. Google Maps will find the address and route.</p><a class="btn primary" href="${gm}" target="_blank" rel="noopener">Open route in Google Maps ↗</a></div>` : `<p class="muted">Type a starting address, then open the route in Google Maps.</p>`;
-  else if (d.from === -2) result = `<div class="dres"><p class="muted" style="margin:0">Google Maps will ask for your location itself. This page never reads or stores where you are.</p><a class="btn primary" href="${gm}" target="_blank" rel="noopener">Directions from my location ↗</a></div>`;
-  else if (d.mode === 'transit') result = `<div class="dres"><p class="muted" style="margin:0">Public transport times need live timetables, which aren’t available here.</p><a class="btn primary" href="${gm}" target="_blank" rel="noopener">See transit options in Google Maps ↗</a></div>`;
-  else if (!r) result = `<div class="dres"><p class="muted" style="margin:0">${d.mode === 'walk' ? 'Walking routes are only calculated for trips under 12 km (7.5 mi).' : d.mode === 'bike' ? 'Cycling routes are only calculated for trips under 40 km (25 mi).' : 'No driving route was found for this start point.'}</p><a class="btn" href="${gm}" target="_blank" rel="noopener">Try it in Google Maps ↗</a></div>`;
+  else if (d.from === -1) result = d.custom.trim() ? `<div class="dres"><p class="muted" style="margin:0">Routes from a typed address need a live routing service, which this page can’t reach. Google Maps will find the address and route.</p></div>` : `<p class="muted">Type a starting address, then open the route in Google Maps.</p>`;
+  else if (d.from === -2) result = `<div class="dres"><p class="muted" style="margin:0">Google Maps will ask for your location itself. This page never reads or stores where you are.</p></div>`;
+  else if (d.mode === 'transit') result = `<div class="dres"><p class="muted" style="margin:0">Public transport times need live timetables, which aren’t available here.</p></div>`;
+  else if (!r) result = `<div class="dres"><p class="muted" style="margin:0">${d.mode === 'walk' ? 'Walking routes are only calculated for trips under 12 km (7.5 mi).' : d.mode === 'bike' ? 'Cycling routes are only calculated for trips under 40 km (25 mi).' : 'No driving route was found for this start point.'}</p></div>`;
   else result = `<div class="dres"><div class="dnum"><div><span>Distance</span><b>${fmtD(p, r.km)}</b></div><div><span>Est. time</span><b>${r.min} min</b></div><div><span>Mode</span><b>${MODES.find(m => m[0] === d.mode)[1]}</b></div></div>
-      <p class="muted" style="margin:0">Route from OpenStreetMap routing (OSRM), without live traffic.</p><a class="btn primary" href="${gm}" target="_blank" rel="noopener">Open route in Google Maps ↗</a></div>`;
+      <p class="muted" style="margin:0">Route from OpenStreetMap routing (OSRM), without live traffic.</p></div>`;
   return `<div class="dform">
       <label for="dFrom">Starting point</label>
       <select id="dFrom"><option value="">Choose a starting point…</option>
         <optgroup label="Nearby landmarks">${lmOs.map(([x, i]) => opt(i, x.name, d.from === i)).join('')}</optgroup>
         ${prOs.length ? `<optgroup label="Other projects">${prOs.map(([x, i]) => opt(i, x.name, d.from === i)).join('')}</optgroup>` : ''}
-        <optgroup label="Other">${opt(-1, 'Type an address…', d.from === -1)}${opt(-2, 'My current location (in Google Maps)', d.from === -2)}</optgroup></select>
+        </select>
       ${d.from === -1 ? `<input id="dCustom" type="text" placeholder="Street address, city or place" value="${esc(d.custom)}" aria-label="Starting address">` : ''}
       <label for="dTo">Destination project</label>
       <select id="dTo">${PROJECTS.map(x => opt(x.id, `${x.n}. ${x.name}`, x.id === p.id)).join('')}</select>
@@ -2304,11 +2354,11 @@ function hoodPane(p) {
   const gal = (AREA[p.id] || []);
   return `<p class="lead">${esc(p.summary)}</p>
     <dl class="kv">${p.stats.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
-    <div class="pc-acts"><button class="btn primary" data-act="3d">▶ 3D fly-around</button><a class="btn" href="${earthUrl(p.lat, p.lng)}" target="_blank" rel="noopener">Real 3D in Google Earth ↗</a></div>
+    <div class="pc-acts"><button class="btn primary" data-act="3d">▶ 3D view</button><button class="btn" data-act="drone">✈ Drone flight</button></div>
     ${pz ? `<h3>Home values · Zillow</h3><div class="zcard"><div><span>ZIP ${pz.zip} (${esc(pz.city)}) typical value</span><b>${money(pz.v)}</b><small class="${pz.yoy >= 0 ? 'up' : 'down'}">${pz.yoy >= 0 ? '▲ +' : '▼ '}${pz.yoy}% vs a year ago</small></div>${spark(pz.s)}</div>`
       : `<div class="note-box">Zillow publishes home values for US ZIP codes only, so there’s no home value data for ${esc(p.city)}.</div>`}
     ${H?.zips.length > 1 ? `<h3>ZIPs around this project</h3><ul class="zbars">${H.zips.map(z => `<li><span>ZIP ${z.zip}<small>${esc(z.city)}${z.zip === H.zip ? ' · project' : ''}</small></span><span class="zbar"><i style="width:${(z.v / maxV * 100).toFixed(1)}%" class="${z.zip === H.zip ? 'own' : ''}"></i></span><b class="mono">${money(z.v)}</b></li>`).join('')}</ul>` : ''}
-    ${gal.length ? `<div class="sech"><h3>Photos taken nearby</h3><span>${gal.length} · Wikimedia Commons</span></div><div class="gal">${gal.map((g, i) => `<button data-gal="${i}" title="${esc(g.t)}"><img src="${esc(g.f)}" alt="${esc(g.t)}" loading="lazy" onerror="this.parentNode.hidden=true"><span>${fmtD(p, g.km)}</span></button>`).join('')}</div>` : ''}
+    ${gal.length ? `<div class="sech"><h3>Photos taken nearby</h3><button class="link" data-tour>${tour.on ? '■ Stop photo tour' : '▶ Photo tour'}</button></div><div class="gal">${gal.map((g, i) => `<button data-gal="${i}" title="${esc(g.t)}"><img src="${esc(g.f)}" alt="${esc(g.t)}" loading="lazy" onerror="this.parentNode.hidden=true"><span>${fmtD(p, g.km)}</span></button>`).join('')}</div>` : ''}
     <div class="sech"><h3>Everything within 3 mi</h3><span>${total.toLocaleString()} named places</span></div>
     <div class="hcounts">${HCATS.filter(([k]) => H?.places[k]?.length).map(([k, t]) => `<span>${dotc(k)}<b>${within1(k)}</b> ${t.toLowerCase()} within 1 mi</span>`).join('')}</div>
     <input id="hoodQ" type="search" placeholder="Search ${total.toLocaleString()} places by name or type" value="${esc(state.hoodQ)}" aria-label="Search places within 3 miles">
@@ -2347,7 +2397,7 @@ function placePane(p) {
       <span class="pc-badge" title="${esc(d.posNote || 'Location from OpenStreetMap; may mark the middle of a larger site')}">${esc(d.pos || 'OpenStreetMap position')}</span>${d.posNote ? `<p class="pc-addr">${esc(d.posNote)}</p>` : ''}
       <p class="pc-addr">${d.a ? esc(d.a) : 'Street address not listed in OpenStreetMap'}</p>
       ${d.img ? `<figure class="pc-img"><img src="${esc(d.img)}" alt="Photo of ${esc(o.name)}" loading="lazy" onerror="this.closest('figure').outerHTML='<p class=&quot;pc-noimg&quot;>The photo couldn’t load.</p>'"><figcaption>${d.cap ? `<b>${esc(d.cap)}</b><br>` : ''}Photo: ${esc(d.cr)} · ${esc(d.lic)} · <a href="${esc(d.src)}" target="_blank" rel="noopener">Wikimedia Commons ↗</a></figcaption></figure>`
-        : `<a class="pc-noimg" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(o.name)}%20${q}" target="_blank" rel="noopener"><span>No free-licensed photo on file for this place.</span><b>See photos in Google Maps ↗</b></a>`}
+        : ``}
       ${d.ds ? `<p class="pc-ds">${esc(short(d.ds))}${d.wk ? ` <a href="${esc(d.wk)}" target="_blank" rel="noopener">Wikipedia ↗</a>` : ''}</p>` : ''}
       <dl class="pc-kv">
         ${row('Type', esc(o.kind))}
@@ -2365,7 +2415,7 @@ function placePane(p) {
         ${o.rkm != null ? row('By road', `<span class="mono">${fmtD(p, o.rkm)}</span> · about ${o.rmin} min driving`) : ''}
       </dl>
       ${z ? `<p class="muted">Home value is Zillow’s ZIP-wide estimate (${asofLabel(H.asof)}), not a price for this community.</p>` : ''}
-      <div class="pc-acts"><a class="btn primary" href="https://www.google.com/maps/search/?api=1&query=${q}" target="_blank" rel="noopener">Open in Google Maps ↗</a><a class="btn" href="${gmaps(o.p, [p.lat, p.lng])}" target="_blank" rel="noopener">Directions from ${esc(p.short)} ↗</a><a class="btn" href="${earthUrl(o.p[0], o.p[1], 700)}" target="_blank" rel="noopener">3D in Google Earth ↗</a><button class="btn" data-center="${q}">Center on map</button></div>
+      <div class="pc-acts"><button class="btn" data-center="${q}">Center on map</button></div>
       <p class="muted">Details: ${d.srcNote ? esc(d.srcNote) : 'OpenStreetMap contributors'}${d.wk ? ', Wikipedia' : ''}${d.img ? ', photo from Wikimedia Commons' : ''}. Not verified by Shoora EB5.</p>
     </div>`;
 }
@@ -2392,13 +2442,13 @@ function open3D(mode = 'orbit') {
   const p = byId[state.pid];
   $('v3d').hidden = false; camMode = reduceMotion ? 'still' : mode;
   $('v3dTitle').textContent = `${p.short} · 3D`;
-  $('v3dEarth').href = earthUrl(p.lat, p.lng);
+  $('v3dG').hidden = !GKEY;
   renderV3Btns();
   closeG3();
-  if (!window.maplibregl) { v3status('The 3D view needs a mapping library (MapLibre) that couldn’t load. Check your connection, or use Google Earth for real 3D imagery.', true); return; }
+  if (!window.maplibregl) { v3status('The 3D view needs a mapping library (MapLibre) that couldn’t load. Check your connection and try again.', true); return; }
   v3status('Loading 3D terrain, imagery and buildings…');
   loadB3(p.id).then(d => { if (state.pid === p.id && !$('v3d').hidden) build3D(p, d); })
-    .catch(e => v3status(`The 3D building data couldn’t load (${esc(e.message)}). Google Earth still shows real 3D imagery of this site.`, true));
+    .catch(e => v3status(`The 3D building data couldn’t load (${esc(e.message)}). Please try again.`, true));
 }
 function close3D() {
   stopCam(); closeG3();
@@ -2479,12 +2529,12 @@ function build3D(p, d) {
   if (st) style.terrain = { source: 'dem', exaggeration: 1.35 };
   try {
     m3 = new maplibregl.Map({ container: 'v3dMap', style, center: [p.lng, p.lat], zoom: 13.4, pitch: 0, maxPitch: 80, attributionControl: false, antialias: true });
-  } catch (e) { v3status('Your browser couldn’t start the 3D view (WebGL is turned off or unsupported). Google Earth still works.', true); return; }
+  } catch (e) { v3status('Your browser couldn’t start the 3D view (WebGL is turned off or unsupported).', true); return; }
   m3.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
   m3.addControl(new maplibregl.AttributionControl({ compact: true, customAttribution: 'Buildings & roads © OpenStreetMap contributors' }));
   ['mousedown', 'touchstart', 'wheel'].forEach(ev => m3.on(ev, () => { if (camMode === 'orbit' || camMode === 'fly') { stopCam(); camMode = 'still'; renderV3Btns(); } }));
   let m3ready = false;
-  m3.on('error', e => { if (!m3ready) v3status(`The 3D view hit a problem: ${esc((e && e.error && e.error.message) || 'unknown error')}. Google Earth still shows real 3D imagery.`, true); });
+  m3.on('error', e => { if (!m3ready) v3status(`The 3D view hit a problem: ${esc((e && e.error && e.error.message) || 'unknown error')}.`, true); });
   m3.on('load', () => {
     m3ready = true; v3status('');
     applyM3Opts();
@@ -2498,7 +2548,7 @@ function build3D(p, d) {
       el.addEventListener('click', () => { close3D(); if (state.tab !== 'hood') { state.tab = 'hood'; renderPanel(); renderHood(false); } openPlace({ src: 'hood', cat: c, i }); });
     });
     const tagged = d.b.filter(x => !x[1]).length;
-    $('v3dNote').textContent = `${st ? (inUS(p.lat, p.lng) ? 'USGS' : 'Sentinel-2') + ' satellite imagery on Mapzen terrain (heights exaggerated 1.35×). ' : ''}${d.b.length.toLocaleString()} buildings from OpenStreetMap; ${tagged.toLocaleString()} have a mapped height, the rest use a typical height for their type. Not a photo: for photorealistic 3D use Google 3D or Google Earth.`;
+    $('v3dNote').textContent = `${st ? (inUS(p.lat, p.lng) ? 'USGS' : 'Sentinel-2') + ' satellite imagery on Mapzen terrain (heights exaggerated 1.35×). ' : ''}${d.b.length.toLocaleString()} buildings from OpenStreetMap; ${tagged.toLocaleString()} have a mapped height, the rest use a typical height for their type. A 3D model, not a photograph.`;
     m3.flyTo({ center: [p.lng, p.lat], zoom: 16.1, pitch: 62, bearing: -30, duration: reduceMotion ? 0 : 4200, essential: true });
     m3.once('moveend', () => startCam(camMode));
   });
@@ -2524,7 +2574,7 @@ async function openG3() {
   if (!GKEY) {
     v3status(`<span style="display:grid;gap:8px;text-align:left"><b>Google Photorealistic 3D</b><span>This shows the same photographic 3D buildings and terrain as Google Earth. It needs a Google Maps Platform API key with the Map Tiles API turned on (Google bills by use, with a monthly free allowance).</span>
       <label style="display:grid;gap:4px">Paste a key to use it in this browser<input id="gkeyIn" type="password" placeholder="AIza…" autocomplete="off" style="height:32px;border:1px solid var(--line);border-radius:7px;padding:0 8px;background:var(--surface);color:var(--fg)"></label>
-      <span style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn primary" id="gkeySave">Use this key</button><a class="btn" href="${earthUrl(p.lat, p.lng)}" target="_blank" rel="noopener">Open in Google Earth instead ↗</a><button class="btn" id="gkeyClose">Close</button></span></span>`, true);
+      <span style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn primary" id="gkeySave">Use this key</button><button class="btn" id="gkeyClose">Close</button></span></span>`, true);
     $('gkeySave').onclick = () => { const k = $('gkeyIn').value.trim(); if (!k) return; GKEY = k; try { localStorage.setItem('eb5-gkey', k); } catch (e) {} gSession = null; v3status(''); openG3(); syncSat(); };
     $('gkeyClose').onclick = () => v3status('');
     return;
@@ -2620,11 +2670,11 @@ function placeSummary(p, pl) {
   const H = HOOD[p.id], z = o.zip && H ? H.zips.find(x => x.zip === o.zip) : null;
   const facts = [d.a, d.hrs ? 'Hours: ' + d.hrs : '', z ? `ZIP ${z.zip} typical home value ${money(z.v)}` : '', d.cu ? 'Cuisine: ' + d.cu : ''].filter(Boolean).slice(0, 2);
   const blurb = d.ds ? (d.ds.length > 150 ? d.ds.slice(0, d.ds.lastIndexOf(' ', 140)) + '…' : d.ds) : '';
-  return `<div class="sum">${d.img ? `<div class="sum-img"><img src="${esc(d.img)}" alt="Photo of ${esc(o.name)}" onerror="this.parentNode.remove()"><span>Photo: ${esc(d.cr || '')} · ${esc(d.lic || '')}</span></div>` : ''}
+  return `<div class="sum">
     <div class="sum-b"><span class="eyebrow">${o.dot}${esc(o.cat || '')}</span><b class="sum-t">${esc(o.name)}</b>
     <span class="sum-m">${esc(o.kind)} · <b>${fmtD(p, o.km)}</b> from ${esc(p.short)}${o.rmin != null ? ` · ${o.rmin} min drive` : ''}</span>
     ${blurb ? `<p class="sum-d">${esc(blurb)}</p>` : ''}${facts.map(f => `<span class="sum-f">${esc(f)}</span>`).join('')}
-    <div class="popbtns"><button class="btn primary" data-full>Full details</button><a class="btn" href="${gmaps(o.p, [p.lat, p.lng])}" target="_blank" rel="noopener">Directions ↗</a><a class="btn" href="${svUrl(o.p[0], o.p[1])}" target="_blank" rel="noopener" title="Street-level photos in Google Maps">Street View ↗</a></div></div></div>`;
+    <div class="popbtns"><button class="btn primary" data-full>Full details</button><button class="btn" data-zoom="${o.p[0]},${o.p[1]}">Zoom in</button></div></div></div>`;
 }
 let sumPop = null;
 function openPlace(pl) {
@@ -2638,10 +2688,11 @@ function openPlace(pl) {
   sumPop = L.popup({ className: 'pp-pop sum-pop', maxWidth: 330, minWidth: 280, offset: [0, -6], autoPanPaddingTopLeft: [60, 80], autoPanPaddingBottomRight: [state.legendOpen ? 230 : 60, 70] }).setLatLng(o.p).setContent(placeSummary(p, pl));
   sumPop._eb5 = true;
   sumPop.openOn(map);
+  placePhoto(p, pl);
   if (!$('drawer').hidden) openDrawer();
   if (drawerMode.matches) setDrawer(false);
 }
-function closePlace() { state.place = null; linkLayer.clearLayers(); closeDrawer(); if (sumPop) { const s = sumPop; sumPop = null; map.closePopup(s); } if (hoodOn()) renderHood(false); else { state.poi = null; renderPOIs(); } }
+function closePlace() { hidePhotoCard(); state.place = null; linkLayer.clearLayers(); closeDrawer(); if (sumPop) { const s = sumPop; sumPop = null; map.closePopup(s); } if (hoodOn()) renderHood(false); else { state.poi = null; renderPOIs(); } }
 map.on('popupclose', e => { if (e.popup._eb5 && e.popup === sumPop) { sumPop = null; if ($('drawer').hidden) { state.place = null; linkLayer.clearLayers(); if (hoodOn()) renderHood(false); else { state.poi = null; renderPOIs(); } } } });
 map.on('popupopen', e => {
   const el = e.popup.getElement(); if (!el) return;
@@ -2668,9 +2719,10 @@ function openGallery(i) {
   linkLayer.addLayer(L.circleMarker([g.lat, g.lng], { renderer: svgRoute, pane: 'route', radius: 8, className: 'measure-pt', interactive: false }));
   linkLayer.addTo(map);
   const pop = L.popup({ className: 'pp-pop sum-pop', maxWidth: 340, minWidth: 290, autoPanPaddingTopLeft: [60, 80], autoPanPaddingBottomRight: [state.legendOpen ? 230 : 60, 70] }).setLatLng([g.lat, g.lng])
-    .setContent(`<div class="sum"><div class="sum-img tall"><img src="${esc(g.f)}" alt="${esc(g.t)}"><span>Photo: ${esc(g.cr)} · ${esc(g.lic)}</span></div><div class="sum-b"><b class="sum-t">${esc(g.t)}</b><span class="sum-m">Taken <b>${fmtD(p, g.km)}</b> from ${esc(p.short)}</span>
-      <div class="popbtns"><button class="btn primary" data-gfull="${i}">Full details</button><a class="btn" href="${svUrl(g.lat, g.lng)}" target="_blank" rel="noopener">Street View ↗</a></div></div></div>`);
-  map.flyTo([g.lat, g.lng], Math.max(map.getZoom(), 16), { duration: reduceMotion ? 0 : .8 });
+    .setContent(`<div class="sum"><div class="sum-b"><b class="sum-t">${esc(g.t)}</b><span class="sum-m">Taken <b>${fmtD(p, g.km)}</b> from ${esc(p.short)}</span>
+      <div class="popbtns"><button class="btn primary" data-gfull="${i}">Full details</button><button class="btn" data-zoom="${g.lat},${g.lng}">Zoom in</button></div></div></div>`);
+  showPhotoCard({ src: g.f, title: g.t, sub: `Taken ${fmtD(p, g.km)} from ${p.short}`, credit: `Photo: ${g.cr} · ${g.lic}` });
+  map.flyTo([g.lat, g.lng], Math.max(map.getZoom(), 16), { duration: reduceMotion ? 0 : 1.2 });
   map.once('moveend', () => pop.openOn(map));
 }
 function openGalleryDrawer(i) {
@@ -2678,15 +2730,48 @@ function openGalleryDrawer(i) {
   const dr = $('drawer');
   dr.innerHTML = `<div class="dr-h"><b>Photo details</b><button class="close" data-dclose aria-label="Close details">✕</button></div><div class="dr-b tabpane"><figure class="pc-img"><img src="${esc(g.f)}" alt="${esc(g.t)}"><figcaption>Photo: ${esc(g.cr)} · ${esc(g.lic)} · <a href="${esc(g.src)}" target="_blank" rel="noopener">Wikimedia Commons ↗</a></figcaption></figure>
     <h3 class="pc-t">${esc(g.t)}</h3><dl class="pc-kv"><div><dt>Taken</dt><dd>${fmtD(p, g.km)} from ${esc(p.short)}</dd></div><div><dt>Coordinates</dt><dd class="mono">${g.lat.toFixed(5)}, ${g.lng.toFixed(5)}</dd></div></dl>
-    <div class="pc-acts"><a class="btn" href="${svUrl(g.lat, g.lng)}" target="_blank" rel="noopener">Street View ↗</a><a class="btn" href="${earthUrl(g.lat, g.lng, 600)}" target="_blank" rel="noopener">3D in Google Earth ↗</a><button class="btn" data-center="${g.lat},${g.lng}">Center on map</button></div></div>`;
+    <div class="pc-acts"><button class="btn" data-center="${g.lat},${g.lng}">Center on map</button></div></div>`;
   dr.hidden = false;
 }
 
 /* Satellite snapshot of the project at the top of its panel */
 function projHero(p) {
   return `<figure class="hero"><img src="${esc(satThumb(p.lat, p.lng))}" alt="Satellite view of the ${esc(p.short)} site" onerror="this.closest('figure').classList.add('noimg')"><span class="hero-pin" aria-hidden="true"></span>
-    <figcaption><button class="btn" data-act="3d">▶ 3D view</button><button class="btn" data-act="drone">✈ Drone flight</button><a class="btn" href="${earthUrl(p.lat, p.lng)}" target="_blank" rel="noopener">Google Earth ↗</a></figcaption><small>${inUS(p.lat, p.lng) ? 'USGS imagery' : 'Sentinel-2 imagery (EOX)'}</small></figure>`;
+    <figcaption><button class="btn" data-act="3d">▶ 3D view</button><button class="btn" data-act="drone">✈ Drone flight</button></figcaption><small>${inUS(p.lat, p.lng) ? 'USGS imagery' : 'Sentinel-2 imagery (EOX)'}</small></figure>`;
 }
+
+/* ---------- Selected place photo (bottom-left of the map) + photo tour ---------- */
+function showPhotoCard({ src, title, sub, credit, sat }) {
+  const pc = $('photoCard');
+  pc.innerHTML = `<div class="pcimg${sat ? ' sat' : ''}"><img src="${esc(src)}" alt="${esc(title)}" onerror="this.closest('.photocard').hidden=true;document.getElementById('mapwrap').classList.remove('has-photo')">${sat ? '<span class="pc-tag">Satellite view</span>' : ''}</div>
+    <figcaption><b>${esc(title)}</b>${sub ? `<small>${esc(sub)}</small>` : ''}<span class="pc-cr">${esc(credit || '')}</span></figcaption>
+    ${tour.on ? `<button class="btn tourbtn" data-tourstop>■ Stop photo tour</button>` : ''}<button class="close" data-pclose aria-label="Hide photo">✕</button>`;
+  pc.hidden = false; $('mapwrap').classList.add('has-photo');
+  pc.classList.remove('anim'); void pc.offsetWidth; pc.classList.add('anim');
+}
+function hidePhotoCard() { $('photoCard').hidden = true; $('mapwrap').classList.remove('has-photo'); }
+$('photoCard').addEventListener('click', e => { if (e.target.closest('[data-pclose]')) { if (tour.on) stopTour(); hidePhotoCard(); } if (e.target.closest('[data-tourstop]')) stopTour(); });
+function placePhoto(p, pl) {
+  const o = placeObj(p, pl); if (!o) return;
+  const d = DETAILS[o.oid] || {};
+  if (d.img) showPhotoCard({ src: d.img, title: o.name, sub: d.cap || o.kind, credit: `Photo: ${d.cr || ''} · ${d.lic || ''}` });
+  else showPhotoCard({ src: satThumb(o.p[0], o.p[1], .14, 600, 380), title: o.name, sub: `${o.kind} · seen from above`, credit: inUS(o.p[0], o.p[1]) ? 'Imagery: USGS (public domain)' : 'Imagery: Sentinel-2 cloudless by EOX (CC BY 4.0)', sat: true });
+}
+const tour = { on: false, i: 0, t: 0 };
+function startTour() { const p = byId[state.pid]; if (!(AREA[p.id] || []).length) return; tour.on = true; tour.i = 0; renderPanel(); stepTour(); }
+function stepTour() {
+  if (!tour.on || state.mode !== 'project') return stopTour();
+  const g = AREA[state.pid] || []; if (!g.length) return stopTour();
+  openGallery(tour.i % g.length); tour.i++;
+  tour.t = setTimeout(stepTour, 7000);
+}
+function stopTour() { if (!tour.on) return; tour.on = false; clearTimeout(tour.t); const b = $('photoCard').querySelector('[data-tourstop]'); if (b) b.remove(); renderPanel(); }
+$('map').addEventListener('wheel', () => { if (tour.on) stopTour(); }, { passive: true });
+$('map').addEventListener('pointerdown', e => { if (tour.on && !e.target.closest('.leaflet-popup')) stopTour(); });
+map.on('popupopen', e => {
+  const el = e.popup.getElement(); if (!el) return;
+  el.querySelectorAll('[data-zoom]').forEach(b => b.onclick = () => { const [a, c] = b.dataset.zoom.split(','); map.flyTo([+a, +c], 17, { duration: reduceMotion ? 0 : .8 }); });
+});
 
 /* Locator inset: where in the US / world this project is */
 let inset, insetDot, insetBox;
@@ -2740,7 +2825,7 @@ function renderLegend() {
 function go(id, { fit = true } = {}) {
   clearRoute(); state.lm = null;
   if (state.measure) setMeasure(false);
-  map.closePopup(); state.poi = null; state.place = null; state.hoodQ = ''; state.hoodMore.clear(); if (!$('v3d').hidden) close3D(); closeDrawer(); state.nearQ = ''; state.dir = { from: null, mode: state.dir.mode, custom: '' };
+  map.closePopup(); state.poi = null; state.place = null; state.hoodQ = ''; state.hoodMore.clear(); if (!$('v3d').hidden) close3D(); closeDrawer(); if (tour.on) stopTour(); hidePhotoCard(); state.nearQ = ''; state.dir = { from: null, mode: state.dir.mode, custom: '' };
   linkLayer.clearLayers(); dirLayer.clearLayers(); map.removeLayer(dirLayer);
   if (id === 'all' || !byId[id]) {
     state.mode = 'overview'; state.pid = null;
@@ -2892,7 +2977,7 @@ function renderPanel() {
         ${issuesBlock(p)}
         <h3>Nearest places</h3><ul class="nav">${p.landmarks.slice().sort((a, b) => a.km - b.km).slice(0, 3).map(l => lmRow(p, l)).join('')}</ul>
       </div></div>
-      <div class="pfoot" style="flex-wrap:wrap"><button class="btn primary grow" id="openMap">Open project map ${p.n} →</button><a class="btn" href="${gmaps([p.lat, p.lng])}" target="_blank" rel="noopener" title="Directions in Google Maps">${ICON.dir}</a><a class="btn" href="${p.url}" target="_blank" rel="noopener" title="Project page">${ICON.ext}</a><button class="btn" data-star="${p.id}" aria-pressed="${SL.has(p.id)}" title="${SL.has(p.id) ? 'Remove from' : 'Add to'} shortlist" style="color:${SL.has(p.id) ? 'var(--star)' : 'inherit'}">${starSvg(SL.has(p.id))}</button></div>`;
+      <div class="pfoot" style="flex-wrap:wrap"><button class="btn primary grow" id="openMap">Open project map ${p.n} →</button><a class="btn" href="${p.url}" target="_blank" rel="noopener" title="Project page">${ICON.ext}</a><button class="btn" data-star="${p.id}" aria-pressed="${SL.has(p.id)}" title="${SL.has(p.id) ? 'Remove from' : 'Add to'} shortlist" style="color:${SL.has(p.id) ? 'var(--star)' : 'inherit'}">${starSvg(SL.has(p.id))}</button></div>`;
     $('closePanel').onclick = clearOverviewSel;
     $('openMap').onclick = () => go(p.id);
     el.onclick = e => { const s = e.target.closest('[data-star]'); if (s) return toggleStar(s.dataset.star); const b = e.target.closest('.nav button'); if (b) { go(p.id, { fit: false }); selectLandmark(+b.dataset.j); } };
@@ -2918,11 +3003,11 @@ function renderPanel() {
   if (state.tab === 'contact') pane = `<div class="contact"><p class="muted" style="margin:0">Owner / developer</p><b>${esc(p.owner)}</b>
       <p class="muted" style="margin:6px 0 0">Investor contact</p><div class="row"><span>${CONTACT.email}</span><button class="iconbtn" data-act="email">Copy</button></div><div class="row"><span>${CONTACT.phone}</span><button class="iconbtn" data-act="phone">Copy</button></div><p class="muted">${esc(CONTACT.office)}</p></div>
     <h3>Source</h3><p class="muted">Project details from the <a href="${p.url}" target="_blank" rel="noopener">project page on shooraeb5.com</a>, checked ${p.updated}. Street map © OpenStreetMap contributors; drive routes from OSRM.</p>`;
-  el.innerHTML = `${projHero(p)}<div class="ph"><h2>${esc(p.name)}</h2>
+  el.innerHTML = `<button class="backbar" data-goall>← All projects</button>${projHero(p)}<div class="ph"><h2>${esc(p.name)}</h2>
       <div class="addr">${esc(p.address)}</div>
       <details class="acc${p.accuracy === 'approx' ? ' warn' : ''}"><summary>ⓘ ${accLabel}</summary><p>${esc(p.accNote)}</p></details>
-      <div class="acts"><a class="btn" href="${gmaps([p.lat, p.lng])}" target="_blank" rel="noopener">${ICON.dir}Directions</a><button class="btn" data-act="addr">${ICON.copy}Copy address</button><button class="btn${SL.has(p.id) ? ' on' : ''}" data-star="${p.id}" aria-pressed="${SL.has(p.id)}">${starSvg(SL.has(p.id))}${SL.has(p.id) ? 'Shortlisted' : 'Shortlist'}</button><a class="btn" href="${p.url}" target="_blank" rel="noopener">${ICON.ext}Project page</a></div></div>
-    <div class="ptabs" role="tablist" style="padding-top:4px">${[['info', 'Overview', 0, p.issues.length], ['hood', 'Neighborhood'], ['near', 'Nearby', NCATS.filter(c => state.layersOn.has(c.k)).reduce((s, c) => s + withinR(p, c.k).length, 0)], ['dir', 'Directions'], ['contact', 'Contact']].map(([k, t, n, iss]) => `<button role="tab" data-tab="${k}" aria-selected="${state.tab === k}">${t}${n ? ` <small>${n}</small>` : ''}${iss ? ` <small title="Issues to confirm" style="color:#d98300">● ${iss}</small>` : ''}</button>`).join('')}</div>
+      <div class="acts"><button class="btn" data-act="dirs">${ICON.dir}Directions</button><button class="btn" data-act="addr">${ICON.copy}Copy address</button><button class="btn${SL.has(p.id) ? ' on' : ''}" data-star="${p.id}" aria-pressed="${SL.has(p.id)}">${starSvg(SL.has(p.id))}${SL.has(p.id) ? 'Shortlisted' : 'Shortlist'}</button><a class="btn" href="${p.url}" target="_blank" rel="noopener">${ICON.ext}Project page</a></div></div>
+    <div class="ptabs" role="tablist" style="padding-top:4px">${[['info', 'Overview', 0, p.issues.length], ['hood', 'Neighborhood'], ['near', 'Nearby', NCATS.filter(c => state.layersOn.has(c.k)).reduce((s, c) => s + withinR(p, c.k).length, 0)], ['dir', 'Directions']].map(([k, t, n, iss]) => `<button role="tab" data-tab="${k}" aria-selected="${state.tab === k}">${t}${n ? ` <small>${n}</small>` : ''}${iss ? ` <small title="Issues to confirm" style="color:#d98300">● ${iss}</small>` : ''}</button>`).join('')}</div>
     <div class="scroll"><div class="tabpane" role="tabpanel">${pane}</div></div>
     <div class="pfoot"><button class="btn" id="pPrev">‹ Previous</button><span class="grow muted" style="text-align:center">Map ${p.n} of ${PROJECTS.length + 1}</span><button class="btn" id="pNext">Next ›</button></div>`;
   $('pPrev').onclick = () => step(-1); $('pNext').onclick = () => step(1);
@@ -2937,8 +3022,10 @@ function renderPanel() {
     const pos = e.target.selectionStart; renderPanel(); const f = $(id); if (f) { f.focus(); try { f.setSelectionRange(pos, pos); } catch (er) {} }
   };
   el.onclick = e => {
+    if (e.target.closest('[data-goall]')) { go('all'); return; }
     const t = e.target.closest('[data-tab]'); if (t) { const was = state.tab; state.tab = t.dataset.tab; state.place = null; linkLayer.clearLayers(); if (was === 'dir' && state.tab !== 'dir') { dirLayer.clearLayers(); map.removeLayer(dirLayer); } renderPanel(); if (state.tab === 'dir') drawDir(); if (state.tab === 'near' && !state.rings) setRings(true); renderHood(); return; }
     if (e.target.closest('[data-back]')) { closePlace(); return; }
+    const tb = e.target.closest('[data-tour]'); if (tb) { tour.on ? stopTour() : startTour(); return; }
     const mo = e.target.closest('[data-more]'); if (mo) { const k = mo.dataset.more; state.hoodMore.has(k) ? state.hoodMore.delete(k) : state.hoodMore.add(k); renderPanel(); return; }
     const ga = e.target.closest('[data-gal]'); if (ga) { openGallery(+ga.dataset.gal); return; }
     const ce = e.target.closest('[data-center]'); if (ce) { const [a1, b1] = ce.dataset.center.split(','); map.flyTo([+a1, +b1], Math.max(map.getZoom(), 15), { duration: reduceMotion ? 0 : .7 }); return; }
@@ -2953,6 +3040,7 @@ function renderPanel() {
     const m = e.target.closest('[data-go]'); if (m) { go(m.dataset.go); return; }
     const a = e.target.closest('[data-act]')?.dataset.act; if (!a) return;
     if (a === '3d') { open3D(); return; }
+    if (a === 'dirs') { state.tab = 'dir'; state.place = null; renderPanel(); drawDir(); return; }
     if (a === 'drone') { open3D('fly'); return; }
     if (a === 'addr') copy(p.address, 'Address copied');
     if (a === 'email') copy(CONTACT.email, 'Email copied');
@@ -3031,7 +3119,7 @@ $('reset2').onclick = () => { resetFilters(); applyOverview({ fit: true }); };
 
 /* ---------- Boot ---------- */
 $('mapwrap').dataset.style = state.style;
-state.legendOpen = innerHeight > 700 && innerWidth > 760;
+state.legendOpen = false;
 setDrawer(false);
 map.fitBounds(L.latLngBounds(PROJECTS.map(p => [p.lat, p.lng])), { padding: [60, 60] });
 const start = (location.hash || '').slice(1);
