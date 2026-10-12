@@ -1253,6 +1253,10 @@ b.up { color: var(--open); } b.down { color: #c0392b; }
 .pv-nav:hover { background: rgba(255,255,255,.28); }
 .pviewer .close { position: absolute; top: 16px; right: 16px; width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,.15); color: #fff; }
 @media (prefers-reduced-motion: reduce) { .pviewer.anim { animation: none; } }
+.walkhud { position: absolute; z-index: 6; top: 62px; left: 50%; transform: translateX(-50%); width: min(360px, calc(100% - 24px)); background: color-mix(in srgb, var(--surface) 94%, transparent); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); padding: 9px 12px; display: grid; gap: 3px; text-align: center; }
+.walkhud b { font-size: 13.5px; } .walkhud small { color: var(--muted); font-size: 11.5px; }
+.wbar { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; margin: 3px 0; }
+.wbar i { display: block; height: 100%; width: 0; background: #7c4dff; border-radius: 3px; }
 /* Project pins */
 .pp-icon { background: none; border: 0; }
 .ppin { --c: var(--closed); position: absolute; left: 50%; bottom: 0; width: 30px; height: 30px; margin-left: -15px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); transform-origin: 50% 50%; background: var(--c); border: 2px solid var(--surface); box-shadow: 0 2px 6px rgba(0,0,0,.35); display: grid; place-items: center; transition: transform .15s; }
@@ -1516,7 +1520,7 @@ td.num { font-family: var(--f-data); color: var(--muted); width: 36px; }
       <figure class="photocard" id="photoCard" hidden aria-live="polite"></figure>
       <div class="popover" id="popover" hidden></div>
       <div class="tray" id="tray" role="region" aria-label="Projects selected for comparison" hidden></div>
-      <div class="v3d" id="v3d" role="dialog" aria-label="3D view" hidden><div class="v3d-bar"><b id="v3dTitle">3D view</b><span class="v3d-modes" id="v3dModes" role="group" aria-label="Camera"><button class="btn" data-cam="orbit" title="Turn a full 360° around the site">360° orbit</button><button class="btn" data-cam="fly" title="Low drone passes over the site">Drone flight</button><button class="btn" data-cam="top" title="Look straight down">Top-down</button></span><label class="v3d-head" title="Turn the view">Turn <input type="range" id="v3dHead" min="0" max="359" step="1" value="0" aria-label="Turn the view, in degrees"><span id="v3dHeadV" class="mono">N 0°</span></label><button class="btn" id="v3dSat" aria-pressed="false" title="Satellite layer (low resolution up close)">Satellite</button><button class="btn" id="v3dBld" aria-pressed="true">Buildings</button><button class="btn" id="v3dG" hidden aria-pressed="false" title="Google Photorealistic 3D (needs a Google Maps API key)">Google 3D</button><button class="btn primary" id="v3dClose">Close</button></div><div id="v3dMap"></div><div class="g3d" id="g3d" hidden></div><div class="v3card" id="v3dCard" hidden aria-live="polite"></div><div class="v3d-status" id="v3dStatus" hidden></div><p class="v3d-note" id="v3dNote"></p></div>
+      <div class="v3d" id="v3d" role="dialog" aria-label="3D view" hidden><div class="v3d-bar"><b id="v3dTitle">3D view</b><span class="v3d-modes" id="v3dModes" role="group" aria-label="Camera"><button class="btn" data-cam="orbit" title="Turn a full 360° around the site">360° orbit</button><button class="btn" data-cam="fly" title="Low drone passes over the site">Drone flight</button><button class="btn" data-cam="walk" title="Walk to the project at street level">Walk</button><button class="btn" data-cam="top" title="Look straight down">Top-down</button></span><label class="v3d-head" title="Turn the view">Turn <input type="range" id="v3dHead" min="0" max="359" step="1" value="0" aria-label="Turn the view, in degrees"><span id="v3dHeadV" class="mono">N 0°</span></label><button class="btn" id="v3dSat" aria-pressed="false" title="Satellite layer (low resolution up close)">Satellite</button><button class="btn" id="v3dBld" aria-pressed="true">Buildings</button><button class="btn" id="v3dG" hidden aria-pressed="false" title="Google Photorealistic 3D (needs a Google Maps API key)">Google 3D</button><button class="btn primary" id="v3dClose">Close</button></div><div id="v3dMap"></div><div class="g3d" id="g3d" hidden></div><div class="v3card" id="v3dCard" hidden aria-live="polite"></div><div class="walkhud" id="v3dWalkHud" hidden aria-live="polite"></div><div class="v3d-status" id="v3dStatus" hidden></div><p class="v3d-note" id="v3dNote"></p></div>
       <div class="loader" id="loader"><span><i aria-hidden="true"></i>Loading map…</span></div>
       <div class="hint" id="hint" hidden></div>
       <div class="mapnav" id="mapnav"></div>
@@ -2526,6 +2530,8 @@ function startCam(mode) {
   stopCam(); camMode = mode; renderV3Btns();
   if (!m3) return;
   const p = byId[state.pid];
+  if (mode !== 'walk') { const hud = $('v3dWalkHud'); if (hud) hud.hidden = true; }
+  if (mode === 'walk') { startWalk(); return; }
   if (mode === 'top') { m3.easeTo({ center: [p.lng, p.lat], zoom: 16, pitch: 0, bearing: 0, duration: reduceMotion ? 0 : 1500 }); return; }
   if (mode === 'still') return;
   if (mode === 'orbit') {
@@ -2591,7 +2597,7 @@ function build3D(p, d) {
   } catch (e) { v3status('Your browser couldn’t start the 3D view (WebGL is turned off or unsupported).', true); return; }
   m3.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
   m3.addControl(new maplibregl.AttributionControl({ compact: true, customAttribution: 'Buildings & roads © OpenStreetMap contributors' }));
-  ['mousedown', 'touchstart', 'wheel'].forEach(ev => m3.on(ev, () => { if (camMode === 'orbit' || camMode === 'fly') { stopCam(); camMode = 'still'; renderV3Btns(); } }));
+  ['mousedown', 'touchstart', 'wheel'].forEach(ev => m3.on(ev, () => { if (camMode === 'orbit' || camMode === 'fly' || camMode === 'walk') { stopCam(); camMode = 'still'; renderV3Btns(); } }));
   let m3ready = false;
   m3.on('error', e => { if (!m3ready) v3status(`The 3D view hit a problem: ${esc((e && e.error && e.error.message) || 'unknown error')}.`, true); });
   m3.on('load', () => {
@@ -2800,7 +2806,7 @@ function openGalleryDrawer(i) {
 function projHero(p) {
   const own = pPhotos(p)[0];
   const g = own ? { f: own.f, t: own.t, km: 0, cr: 'Shoora EB5', lic: 'project page', own: 1 } : (PHOTOS[p.id] || [])[0] || (AREA[p.id] || [])[0];
-  const btns = `<figcaption><button class="btn" data-act="3d">⟳ 360° view</button><button class="btn" data-act="drone">✈ Drone flight</button></figcaption>`;
+  const btns = `<figcaption><button class="btn" data-act="3d">⟳ 360° view</button><button class="btn" data-act="drone">✈ Drone flight</button><button class="btn" data-act="walk">🚶 Walk view</button></figcaption>`;
   if (!g) return `<figure class="hero nophoto">${btns}</figure>`;
   return `<figure class="hero"${g.own ? ' data-pphoto="0"' : ''}><img src="${esc(g.f)}" alt="${esc(g.t)}" onerror="this.closest('figure').classList.add('nophoto')">${btns}<small>${g.own ? esc(g.t) + ' · project photo' : `Photo ${fmtD(p, g.km)} from the site · ${esc(g.cr)} · ${esc(g.lic)}`}</small></figure>${projStrip(p)}`;
 }
@@ -2970,6 +2976,58 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { e.stopImmediatePropagation(); closeProjPhoto(); }
 }, true);
 
+/* ---------- Walk view: animated first-person walk along a real walking route (OSRM foot routing) into the project ---------- */
+const WALK_M = 1100;           // length of the walk shown
+const WALK_SPEED = 22;         // metres of route per second of animation (sped-up walk)
+function walkPath(p) {
+  const os = (DIRS[p.id] || []).filter(o => o.modes.walk && o.modes.walk.g.length).sort((a, b) => a.modes.walk.km - b.modes.walk.km);
+  if (!os.length) return null;
+  const o = os[0], pts = dec(o.modes.walk.g).map(([y, x]) => [x, y]);  // [lng, lat], ends at the project
+  // keep the final WALK_M metres
+  let acc = 0, start = 0;
+  for (let i = pts.length - 1; i > 0; i--) { acc += hvKm([pts[i][1], pts[i][0]], [pts[i - 1][1], pts[i - 1][0]]) * 1000; if (acc >= WALK_M) { start = i - 1; break; } }
+  const path = pts.slice(start);
+  const cum = [0];
+  for (let i = 1; i < path.length; i++) cum.push(cum[i - 1] + hvKm([path[i - 1][1], path[i - 1][0]], [path[i][1], path[i][0]]) * 1000);
+  return { from: o.name, path, cum, total: cum[cum.length - 1] };
+}
+const bearingOf = (a, b) => { const t = Math.PI / 180, y = Math.sin((b[0] - a[0]) * t) * Math.cos(b[1] * t), x = Math.cos(a[1] * t) * Math.sin(b[1] * t) - Math.sin(a[1] * t) * Math.cos(b[1] * t) * Math.cos((b[0] - a[0]) * t); return (Math.atan2(y, x) / t + 360) % 360; };
+function posAt(w, d) {
+  d = Math.max(0, Math.min(w.total, d));
+  let i = 1; while (i < w.cum.length - 1 && w.cum[i] < d) i++;
+  const seg = w.cum[i] - w.cum[i - 1] || 1, f = (d - w.cum[i - 1]) / seg, a = w.path[i - 1], b = w.path[i];
+  return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f];
+}
+let walkSrc = false;
+function startWalk() {
+  const p = byId[state.pid], w = walkPath(p);
+  if (!w || !m3) { $('v3dWalkHud').hidden = true; toast('No walking route is available for this project.'); return; }
+  // draw the route on the ground
+  const gj = { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: w.path } };
+  if (m3.getSource('walk')) m3.getSource('walk').setData(gj);
+  else { m3.addSource('walk', { type: 'geojson', data: gj }); m3.addLayer({ id: 'walk', type: 'line', source: 'walk', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#7c4dff', 'line-width': ['interpolate', ['linear'], ['zoom'], 15, 3, 19, 14], 'line-opacity': .85, 'line-dasharray': [1, 1.4] } }, 'bld'); }
+  const hud = $('v3dWalkHud');
+  hud.hidden = false;
+  hud.innerHTML = `<b>Walking to ${esc(p.short)}</b><small>Real walking route from ${esc(w.from.split(' (')[0])} · last ${(w.total / 1000).toFixed(1)} km</small><div class="wbar"><i id="wbarI"></i></div><small id="wleft"></small>`;
+  let bearing = bearingOf(posAt(w, 0), posAt(w, 40)), t0 = performance.now(), last = t0;
+  m3.jumpTo({ center: posAt(w, 0), zoom: 18.6, pitch: 78, bearing });
+  const tick = now => {
+    if (!m3 || camMode !== 'walk') return;
+    const d = Math.min(w.total, (now - t0) / 1000 * WALK_SPEED);
+    const here = posAt(w, d), ahead = posAt(w, Math.min(w.total, d + 45));
+    let target = d < w.total - 5 ? bearingOf(here, ahead) : bearing;
+    let diff = ((target - bearing + 540) % 360) - 180;  // smooth turns
+    bearing = (bearing + diff * Math.min(1, (now - last) / 600) + 360) % 360; last = now;
+    m3.jumpTo({ center: here, bearing, zoom: 18.6, pitch: 78 });
+    $('wbarI').style.width = (d / w.total * 100).toFixed(1) + '%';
+    const left = Math.max(0, w.total - d);
+    $('wleft').textContent = left > 5 ? `${p.km ? Math.round(left) + ' m' : Math.round(left * 3.281) + ' ft'} to go · about ${Math.max(1, Math.round(left / 80))} min on foot` : 'You have arrived';
+    if (d < w.total) camRaf = requestAnimationFrame(tick);
+    else { setTimeout(() => { if (camMode === 'walk') { camMode = 'orbit'; startCam('orbit'); } }, 1500); }
+  };
+  camRaf = requestAnimationFrame(tick);
+}
+
 /* Locator inset: where in the US / world this project is */
 let inset, insetDot, insetBox;
 function renderInset() {
@@ -3051,11 +3109,12 @@ const step = d => { const i = state.mode === 'overview' ? 0 : PROJECTS.indexOf(b
 function renderNav() {
   const p = state.pid ? byId[state.pid] : null;
   $('mapnav').innerHTML = `<button id="prevMap" aria-label="Previous map" title="Previous map (←)">‹</button><span><b>${p ? p.n : 1}/${PROJECTS.length + 1}</b>${p ? esc(p.short) : 'All projects'}</span><button id="nextMap" aria-label="Next map" title="Next map (→)">›</button>`;
-  if (p) $('mapnav').insertAdjacentHTML('beforeend', `<span class="nav-sep"></span><button class="qbtn" data-q="3d" title="360° view of the site">360°</button><button class="qbtn" data-q="drone" title="Drone flight over the site">Drone</button><button class="qbtn" data-q="sat" aria-pressed="${$('mapwrap').dataset.style === 'satellite'}" title="Satellite imagery on or off">Satellite</button>`);
+  if (p) $('mapnav').insertAdjacentHTML('beforeend', `<span class="nav-sep"></span><button class="qbtn" data-q="3d" title="360° view of the site">360°</button><button class="qbtn" data-q="drone" title="Drone flight over the site">Drone</button><button class="qbtn" data-q="walk" title="Walk to the project at street level">Walk</button><button class="qbtn" data-q="sat" aria-pressed="${$('mapwrap').dataset.style === 'satellite'}" title="Satellite imagery on or off">Satellite</button>`);
   $('prevMap').onclick = () => step(-1); $('nextMap').onclick = () => step(1);
   $('mapnav').querySelectorAll('[data-q]').forEach(b => b.onclick = () => {
     if (b.dataset.q === '3d') open3D();
     if (b.dataset.q === 'drone') open3D('fly');
+    if (b.dataset.q === 'walk') open3D('walk');
     if (b.dataset.q === 'sat') { const on = $('mapwrap').dataset.style === 'satellite'; state.styleUser = true; state.style = on ? (hoodOn() ? 'plan' : 'standard') : 'satellite'; if (!on) state.satBlocked = false; applyAutoStyle(hoodOn()); renderNav(); }
   });
 }
@@ -3240,6 +3299,7 @@ function renderPanel() {
     if (a === '3d') { open3D(); return; }
     if (a === 'dirs') { state.tab = 'dir'; state.place = null; renderPanel(); drawDir(); return; }
     if (a === 'drone') { open3D('fly'); return; }
+    if (a === 'walk') { open3D('walk'); return; }
     if (a === 'addr') copy(p.address, 'Address copied');
     if (a === 'email') copy(CONTACT.email, 'Email copied');
     if (a === 'phone') copy(CONTACT.phone, 'Phone number copied');
